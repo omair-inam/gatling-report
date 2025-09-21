@@ -194,6 +194,65 @@ public class TestYamlReport {
     }
 
     @Test
+    public void testYamlDiffReportStructure() throws Exception {
+        // Test that differential reports have correct nested structure
+        // Parse two simulations for diff report
+        List<SimulationContext> stats = Arrays.asList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse(),
+                ParserFactory.getParser(getResourceFile(SIM_WITH_SPACES_LOG)).parse()
+        );
+
+        // Generate YAML diff report
+        Writer writer = new StringWriter();
+        String reportPath = new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        // Parse YAML
+        String yamlContent = writer.toString();
+        Yaml yaml = new Yaml();
+        Map<String, Object> data = yaml.load(yamlContent);
+
+        // Validate correct structure - should have exactly these root keys
+        Assert.assertTrue("Should have 'throughput' at root", data.containsKey("throughput"));
+        Assert.assertTrue("Should have 'average' at root", data.containsKey("average"));
+        Assert.assertTrue("Should have 'ref' at root", data.containsKey("ref"));
+        Assert.assertTrue("Should have 'challenger' at root", data.containsKey("challenger"));
+
+        // These should NOT be at root level (they should be nested)
+        Assert.assertFalse("'simulation' should not be at root level", data.containsKey("simulation"));
+        Assert.assertFalse("'start' should not be at root level", data.containsKey("start"));
+        Assert.assertFalse("'duration' should not be at root level", data.containsKey("duration"));
+
+        // Verify ref is a proper nested object
+        Object refObj = data.get("ref");
+        Assert.assertTrue("'ref' should be a Map", refObj instanceof Map);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> ref = (Map<String, Object>) refObj;
+        Assert.assertTrue("ref should contain 'simulation'", ref.containsKey("simulation"));
+        Assert.assertTrue("ref should contain 'start'", ref.containsKey("start"));
+        Assert.assertTrue("ref should contain 'requests'", ref.containsKey("requests"));
+
+        // Verify challenger is a proper nested object
+        Object challengerObj = data.get("challenger");
+        Assert.assertTrue("'challenger' should be a Map", challengerObj instanceof Map);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> challenger = (Map<String, Object>) challengerObj;
+        Assert.assertTrue("challenger should contain 'simulation'", challenger.containsKey("simulation"));
+        Assert.assertTrue("challenger should contain 'start'", challenger.containsKey("start"));
+        Assert.assertTrue("challenger should contain 'requests'", challenger.containsKey("requests"));
+
+        // Verify throughput structure
+        Object throughputObj = data.get("throughput");
+        Assert.assertTrue("'throughput' should be a Map", throughputObj instanceof Map);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> throughput = (Map<String, Object>) throughputObj;
+        Assert.assertTrue("throughput should contain 'gain'", throughput.containsKey("gain"));
+        Assert.assertTrue("throughput should contain 'status'", throughput.containsKey("status"));
+    }
+
+    @Test
     public void testYamlTrendReport() throws Exception {
         // Parse multiple simulations for trend report
         List<SimulationContext> stats = new ArrayList<>(TREND_LOGS.size());
