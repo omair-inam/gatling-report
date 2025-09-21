@@ -1,0 +1,264 @@
+/*
+ * (C) Copyright 2025 Nuxeo SA (http://nuxeo.com/) and contributors.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ */
+package org.nuxeo.tools.gatling.report;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.yaml.snakeyaml.Yaml;
+
+public class TestYamlReport {
+
+    protected static final String SIM_LOG = "simulation-small.log";
+    protected static final String SIM_WITH_SPACES_LOG = "simulation-v3.2.log.gz";
+    protected static final List<String> TREND_LOGS = Arrays.asList(
+            "simulation.log.1.gz", "simulation.log.2.gz", "simulation.log.3.gz");
+
+    @Test
+    public void testYamlSimulationReportIsValid() throws Exception {
+        // Parse simulation
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse());
+
+        // Generate YAML report
+        Writer writer = new StringWriter();
+        String reportPath = new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        // Assert file extension
+        Assert.assertTrue("Report should have .yaml extension",
+                reportPath.endsWith("index.yaml"));
+
+        // Parse YAML to validate syntax
+        String yamlContent = writer.toString();
+        Yaml yaml = new Yaml();
+        Map<String, Object> data = yaml.load(yamlContent);
+
+        // Validate structure
+        Assert.assertNotNull("YAML should parse successfully", data);
+        Assert.assertTrue("Should contain simulation key",
+                data.containsKey("simulation"));
+        Assert.assertTrue("Should contain requests key",
+                data.containsKey("requests"));
+    }
+
+    @Test
+    public void testYamlApdexIndentation() throws Exception {
+        // Parse simulation
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse());
+
+        // Generate YAML report
+        Writer writer = new StringWriter();
+        new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        // Parse YAML
+        String yamlContent = writer.toString();
+        Yaml yaml = new Yaml();
+        Map<String, Object> data = yaml.load(yamlContent);
+
+        // Check apdex is properly nested
+        Assert.assertTrue("Should have apdex object",
+                data.containsKey("apdex"));
+        Object apdexObj = data.get("apdex");
+        Assert.assertTrue("Apdex should be a Map",
+                apdexObj instanceof Map);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> apdex = (Map<String, Object>) apdexObj;
+        Assert.assertTrue("Apdex should contain 't' field",
+                apdex.containsKey("t"));
+        Assert.assertTrue("Apdex should contain 'rating' field",
+                apdex.containsKey("rating"));
+        Assert.assertTrue("Apdex should contain 'score' field",
+                apdex.containsKey("score"));
+    }
+
+    @Test
+    public void testYamlRequestKeysWithSpecialCharacters() throws Exception {
+        // Parse simulation that has requests with spaces and special chars
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_WITH_SPACES_LOG)).parse());
+
+        // Generate YAML report
+        Writer writer = new StringWriter();
+        new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        // Parse YAML - this will fail if keys aren't properly quoted
+        String yamlContent = writer.toString();
+        Yaml yaml = new Yaml();
+        Map<String, Object> data = yaml.load(yamlContent);
+
+        // Verify requests section exists and is valid
+        Assert.assertTrue("Should have requests key",
+                data.containsKey("requests"));
+        Object requestsObj = data.get("requests");
+        Assert.assertTrue("Requests should be a Map",
+                requestsObj instanceof Map);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> requests = (Map<String, Object>) requestsObj;
+
+        // Check that each request has proper structure
+        for (Map.Entry<String, Object> entry : requests.entrySet()) {
+            String requestName = entry.getKey();
+            Assert.assertNotNull("Request name should not be null", requestName);
+
+            Object requestData = entry.getValue();
+            Assert.assertTrue("Request data should be a Map",
+                    requestData instanceof Map);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> request = (Map<String, Object>) requestData;
+
+            // Verify nested apdex in request
+            if (request.containsKey("apdex")) {
+                Object reqApdex = request.get("apdex");
+                Assert.assertTrue("Request apdex should be a Map",
+                        reqApdex instanceof Map);
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> apdexMap = (Map<String, Object>) reqApdex;
+                Assert.assertTrue("Request apdex should have 't' field",
+                        apdexMap.containsKey("t"));
+            }
+        }
+    }
+
+    @Test
+    public void testYamlTrendReport() throws Exception {
+        // Parse multiple simulations for trend report
+        List<SimulationContext> stats = new ArrayList<>(TREND_LOGS.size());
+        for (String file : TREND_LOGS) {
+            stats.add(ParserFactory.getParser(getResourceFile(file)).parse());
+        }
+
+        // Generate YAML trend report
+        Writer writer = new StringWriter();
+        String reportPath = new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        // Assert file extension
+        Assert.assertTrue("Report should have .yaml extension",
+                reportPath.endsWith("index.yaml"));
+
+        // Parse YAML to validate syntax
+        String yamlContent = writer.toString();
+        Yaml yaml = new Yaml();
+        Map<String, Object> data = yaml.load(yamlContent);
+
+        // Validate it's a trend report structure
+        Assert.assertNotNull("YAML should parse successfully", data);
+        // Trend reports have different structure, but should still be valid YAML
+    }
+
+    @Test
+    public void testYamlReportStatistics() throws Exception {
+        // Parse simulation
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse());
+
+        // Generate YAML report
+        Writer writer = new StringWriter();
+        new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        // Parse YAML
+        String yamlContent = writer.toString();
+        Yaml yaml = new Yaml();
+        Map<String, Object> data = yaml.load(yamlContent);
+
+        // Verify statistics fields are present
+        Assert.assertTrue("Should have min field", data.containsKey("min"));
+        Assert.assertTrue("Should have max field", data.containsKey("max"));
+        Assert.assertTrue("Should have p50 field", data.containsKey("p50"));
+        Assert.assertTrue("Should have p95 field", data.containsKey("p95"));
+        Assert.assertTrue("Should have p99 field", data.containsKey("p99"));
+        Assert.assertTrue("Should have avg field", data.containsKey("avg"));
+        Assert.assertTrue("Should have count field", data.containsKey("count"));
+        Assert.assertTrue("Should have successCount field",
+                data.containsKey("successCount"));
+        Assert.assertTrue("Should have errorCount field",
+                data.containsKey("errorCount"));
+    }
+
+    @Test
+    public void testYamlReportIndentationConsistency() throws Exception {
+        // Parse simulation
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse());
+
+        // Generate YAML report
+        Writer writer = new StringWriter();
+        new Report(stats)
+                .yamlReport(true)
+                .setWriter(writer)
+                .create();
+
+        String yamlContent = writer.toString();
+        String[] lines = yamlContent.split("\n");
+
+        // Check that indentation is consistent (2 spaces per level)
+        for (String line : lines) {
+            if (line.trim().isEmpty() || line.trim().startsWith("#")) {
+                continue; // Skip empty lines and comments
+            }
+
+            // Count leading spaces
+            int spaces = 0;
+            for (char c : line.toCharArray()) {
+                if (c == ' ') {
+                    spaces++;
+                } else {
+                    break;
+                }
+            }
+
+            // Indentation should be multiple of 2
+            Assert.assertTrue("Line should have even number of spaces for indentation: " + line,
+                    spaces % 2 == 0);
+        }
+    }
+
+    protected File getResourceFile(String filename) throws FileNotFoundException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        if (classLoader.getResource(filename) == null) {
+            throw new FileNotFoundException(filename);
+        }
+        return new File(Objects.requireNonNull(classLoader.getResource(filename)).getFile());
+    }
+}
