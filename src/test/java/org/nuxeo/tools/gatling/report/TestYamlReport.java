@@ -273,12 +273,64 @@ public class TestYamlReport {
 
         // Parse YAML to validate syntax
         String yamlContent = writer.toString();
+        System.out.println("Generated YAML content:\n" + yamlContent);
+
         Yaml yaml = new Yaml();
         Map<String, Object> data = yaml.load(yamlContent);
 
         // Validate it's a trend report structure
         Assert.assertNotNull("YAML should parse successfully", data);
-        // Trend reports have different structure, but should still be valid YAML
+
+        // Validate trend report structure
+        Assert.assertTrue("Should have trend section", data.containsKey("trend"));
+        Map<String, Object> trend = (Map<String, Object>) data.get("trend");
+        Assert.assertEquals("Should be trend_report type", "trend_report", trend.get("type"));
+        Assert.assertNotNull("Should have simulations_count", trend.get("simulations_count"));
+
+        // Validate simulations section
+        Assert.assertTrue("Should have simulations section", data.containsKey("simulations"));
+        List<Map<String, Object>> simulations = (List<Map<String, Object>>) data.get("simulations");
+        Assert.assertNotNull("Simulations should not be null", simulations);
+        Assert.assertEquals("Should have 3 simulations", 3, simulations.size());
+
+        // Validate first simulation structure
+        Map<String, Object> firstSim = simulations.get(0);
+        Assert.assertNotNull("Should have simulation name", firstSim.get("simulation"));
+        Assert.assertNotNull("Should have start date", firstSim.get("start"));
+        Assert.assertNotNull("Should have duration", firstSim.get("duration"));
+        Assert.assertNotNull("Should have throughput", firstSim.get("throughput"));
+        Assert.assertNotNull("Should have averageMs", firstSim.get("averageMs"));
+        Assert.assertNotNull("Should have count", firstSim.get("count"));
+        Assert.assertNotNull("Should have successCount", firstSim.get("successCount"));
+        Assert.assertNotNull("Should have errorCount", firstSim.get("errorCount"));
+
+        // Validate apdex structure
+        Assert.assertNotNull("Should have apdex", firstSim.get("apdex"));
+        Map<String, Object> apdex = (Map<String, Object>) firstSim.get("apdex");
+        Assert.assertNotNull("Apdex should have threshold", apdex.get("t"));
+        Assert.assertNotNull("Apdex should have rating", apdex.get("rating"));
+        Assert.assertNotNull("Apdex should have score", apdex.get("score"));
+
+        // Validate percentiles
+        Assert.assertNotNull("Should have min", firstSim.get("min"));
+        Assert.assertNotNull("Should have max", firstSim.get("max"));
+        Assert.assertNotNull("Should have p50", firstSim.get("p50"));
+        Assert.assertNotNull("Should have p95", firstSim.get("p95"));
+        Assert.assertNotNull("Should have p99", firstSim.get("p99"));
+        Assert.assertNotNull("Should have avg", firstSim.get("avg"));
+
+        // Validate requests structure
+        Assert.assertNotNull("Should have requests", firstSim.get("requests"));
+        Map<String, Object> requests = (Map<String, Object>) firstSim.get("requests");
+        Assert.assertFalse("Requests should not be empty", requests.isEmpty());
+
+        // Validate a request entry
+        Map.Entry<String, Object> firstRequest = requests.entrySet().iterator().next();
+        Map<String, Object> requestData = (Map<String, Object>) firstRequest.getValue();
+        Assert.assertNotNull("Request should have name", requestData.get("name"));
+        Assert.assertNotNull("Request should have averageMs", requestData.get("averageMs"));
+        Assert.assertNotNull("Request should have rps", requestData.get("rps"));
+        Assert.assertNotNull("Request should have count", requestData.get("count"));
     }
 
     @Test
