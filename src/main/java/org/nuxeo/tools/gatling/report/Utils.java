@@ -109,4 +109,22 @@ public class Utils {
         }
     }
 
+    public static boolean isBinaryFormat(File file) throws IOException {
+        if (!file.exists() || file.length() < 4) {
+            return false;
+        }
+
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] header = new byte[4];
+            int bytesRead = fis.read(header);
+
+            if (bytesRead < 4) {
+                return false;
+            }
+
+            // Binary format starts with four zero bytes
+            return header[0] == 0 && header[1] == 0 && header[2] == 0 && header[3] == 0;
+        }
+    }
+
 }
