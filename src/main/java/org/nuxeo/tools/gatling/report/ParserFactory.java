@@ -31,6 +31,12 @@ public class ParserFactory {
     }
 
     protected static SimulationParser getVersionSpecificParser(File file, Float apdexT) throws IOException {
+        // First check if the file is binary format
+        if (Utils.isBinaryFormat(file)) {
+            return new SimulationParserBinary(file, apdexT);
+        }
+
+        // Otherwise, try to parse as text format
         List<String> header = getHeaderLine(file);
         if (header.size() == 6) {
             String version = header.get(5);
