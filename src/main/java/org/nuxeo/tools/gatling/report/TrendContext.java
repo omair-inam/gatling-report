@@ -33,6 +33,8 @@ public class TrendContext {
 
     protected List<String> scripts;
 
+    protected final List<SimulationContext> simulations;
+
     public TrendContext(List<SimulationContext> stats) {
         Set<String> names = new HashSet<>();
         List<String> requestNames = getRequestListSorted(stats.get(0));
@@ -42,6 +44,7 @@ public class TrendContext {
         }
         ArrayList<SimulationContext> orderedStats = new ArrayList<>(stats);
         orderedStats.sort((a, b) -> (int) (a.simStat.start - b.simStat.start));
+        this.simulations = orderedStats; // Store the simulations
         for (SimulationContext simStat : orderedStats) {
             names.add(simStat.simulationName);
             all.add(simStat.simStat);
@@ -59,6 +62,26 @@ public class TrendContext {
         return this;
     }
 
+    public List<SimulationContext> getSimulations() {
+        return simulations;
+    }
+
+    public String getScenario() {
+        return scenario;
+    }
+
+    public TrendStat getAll() {
+        return all;
+    }
+
+    public List<TrendStat> getRequests() {
+        return requests;
+    }
+
+    public List<String> getScripts() {
+        return scripts;
+    }
+
     protected List<String> getRequestListSorted(SimulationContext stat) {
         return stat.getRequests().stream().map(s -> s.request).collect(Collectors.toList());
     }
@@ -71,7 +94,7 @@ public class TrendContext {
         return requests.get(1);
     }
 
-    protected class TrendStat {
+    public class TrendStat {
         protected final List<String> xvalues = new ArrayList<>();
         protected final List<Double> yvalues = new ArrayList<>();
         protected final List<Long> yerrors = new ArrayList<>();
@@ -93,6 +116,30 @@ public class TrendContext {
                 yerrors.add(stat.stddev);
                 rps.add(stat.rps);
             }
+        }
+
+        public List<String> getXvalues() {
+            return xvalues;
+        }
+
+        public List<Double> getYvalues() {
+            return yvalues;
+        }
+
+        public List<Long> getYerrors() {
+            return yerrors;
+        }
+
+        public List<Double> getRps() {
+            return rps;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Integer getIndice() {
+            return indice;
         }
     }
 

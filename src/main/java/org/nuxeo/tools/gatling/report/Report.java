@@ -39,7 +39,9 @@ public class Report {
 
     protected static final String HTML = "html/";
 
-    protected static final String DEFAULT_FILENAME = "index.html";
+    protected static final String DEFAULT_HTML_FILENAME = "index.html";
+
+    protected static final String DEFAULT_YAML_FILENAME = "index.yaml";
 
     protected static final String SIMULATION_TEMPLATE = "simulation.mustache";
 
@@ -73,7 +75,7 @@ public class Report {
 
     protected List<String> map;
 
-    protected String filename = DEFAULT_FILENAME;
+    protected String filename = null;
 
     public Report(List<SimulationContext> stats) {
         this.stats = stats;
@@ -179,7 +181,11 @@ public class Report {
     }
 
     public File getReportPath() {
-        return new File(outputDirectory, filename);
+        String reportFilename = filename;
+        if (reportFilename == null) {
+            reportFilename = yaml ? DEFAULT_YAML_FILENAME : DEFAULT_HTML_FILENAME;
+        }
+        return new File(outputDirectory, reportFilename);
     }
 
     public List<String> getScripts() {
@@ -193,7 +199,7 @@ public class Report {
         if (outputDirectory == null || !includeJs) {
             return DEFAULT_CDN_SCRIPT;
         }
-        URL src = getClass().getResource(DEFAULT_SCRIPT);
+        URL src = getClass().getResource("/" + DEFAULT_SCRIPT);
         try {
             FileUtils.copyURLToFile(src, new File(outputDirectory, DEFAULT_SCRIPT));
         } catch (IOException e) {
