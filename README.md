@@ -28,19 +28,19 @@ Create the all in one jar:
 
 The `jar` file that include all its dependencies is located here:
 
-        ./target/gatling-report-VERSION-capsule-full.jar
+        ./target/gatling-report-VERSION.jar
 
 # Usage
 
 ## Help
 
-        java -jar path/to/gatling-report-VERSION-capsule-fat.jar -h
+        java -jar path/to/gatling-report-VERSION.jar -h
 
 ## Output CSV stats
 
 The following command will output to stdout a CSV with stats per request.
 
-        java -jar path/to/gatling-report-VERSION-capsule-fat.jar path/to/simulation.log
+        java -jar path/to/gatling-report-VERSION.jar path/to/simulation.log
         
         scenario        request start   startDate       duration        end     count   successCount    errorCount      min     p50     p95     p99     max     avg     stddev  rps	apdex	rating
         sim50bench      _all    1446578664151   2015-11-03 20:24:24     62.16   1446578726313   2397    2397    0       0       10      598     940     1938    104.40  205     38.56	0.88	Good
@@ -68,12 +68,12 @@ The following command will output to stdout a CSV with stats per request.
 
 You can also submit multiple simulation files, the output will concatenate stats. 
 
-        java -jar path/to/gatling-report-VERSION-capsule-fat.jar path/to/simulation.log [path/to/simulation2.log ...]
+        java -jar path/to/gatling-report-VERSION.jar path/to/simulation.log [path/to/simulation2.log ...]
 
 
 You can also submit gzipped simulation files:
 
-        java -jar path/to/gatling-report-VERSION-capsule-fat.jar path/to/simulation.log.gz
+        java -jar path/to/gatling-report-VERSION.jar path/to/simulation.log.gz
          
 
         
@@ -83,13 +83,13 @@ When using the `-o REPORT_PATH` option a report is generated.
  
 When submitting a single simulation file it creates a simulation report:
  
-       java -jar path/to/gatling-report-VERSION-capsule-fat.jar path/to/simulation.log.gz -o /path/to/report/directory
+       java -jar path/to/gatling-report-VERSION.jar path/to/simulation.log.gz -o /path/to/report/directory
 
  
 When submitting two simulations files it creates a differential report:
 
 
-       java -jar path/to/gatling-report-VERSION-capsule-fat.jar path/to/ref/simulation.log.gz path/to/challenger/simuation2.log -o /path/to/report/directory
+       java -jar path/to/gatling-report-VERSION.jar path/to/ref/simulation.log.gz path/to/challenger/simuation2.log -o /path/to/report/directory
 
 When submitting more than two simulations files it creates a trend report.
 
@@ -98,7 +98,7 @@ When submitting more than two simulations files it creates a trend report.
 
 You can use your own mustache template to customize the report:
 
-        java -jar path/to/gatling-report-VERSION-capsule-fat.jar --template /my/template.mustache path/to/ref/simulation.log.gz -o /path/to/report/directory
+        java -jar path/to/gatling-report-VERSION.jar --template /my/template.mustache path/to/ref/simulation.log.gz -o /path/to/report/directory
 
 Take example to the default templates located in src/main/resources.
 
