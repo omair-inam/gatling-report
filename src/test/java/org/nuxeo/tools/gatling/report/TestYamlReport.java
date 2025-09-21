@@ -37,6 +37,44 @@ public class TestYamlReport {
             "simulation.log.1.gz", "simulation.log.2.gz", "simulation.log.3.gz");
 
     @Test
+    public void testYamlReportDefaultFilename() throws Exception {
+        // Test that YAML reports get .yaml extension by default (no explicit filename set)
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse());
+
+        // Create report with YAML mode but NO explicit filename
+        Report report = new Report(stats)
+                .yamlReport(true)
+                .setOutputDirectory(new File("/tmp"));
+
+        // Check the default filename BEFORE calling create()
+        File reportPath = report.getReportPath();
+        Assert.assertTrue("YAML report should default to .yaml extension when no filename specified",
+                reportPath.getName().endsWith(".yaml"));
+        Assert.assertEquals("Default YAML filename should be index.yaml",
+                "index.yaml", reportPath.getName());
+    }
+
+    @Test
+    public void testHtmlReportDefaultFilename() throws Exception {
+        // Test that HTML reports get .html extension by default (regression test)
+        List<SimulationContext> stats = Collections.singletonList(
+                ParserFactory.getParser(getResourceFile(SIM_LOG)).parse());
+
+        // Create report WITHOUT YAML mode and NO explicit filename
+        Report report = new Report(stats)
+                .yamlReport(false)  // Explicitly set to false for HTML
+                .setOutputDirectory(new File("/tmp"));
+
+        // Check the default filename
+        File reportPath = report.getReportPath();
+        Assert.assertTrue("HTML report should default to .html extension when no filename specified",
+                reportPath.getName().endsWith(".html"));
+        Assert.assertEquals("Default HTML filename should be index.html",
+                "index.html", reportPath.getName());
+    }
+
+    @Test
     public void testYamlSimulationReportIsValid() throws Exception {
         // Parse simulation
         List<SimulationContext> stats = Collections.singletonList(
